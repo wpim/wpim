@@ -12,29 +12,34 @@ import (
 	"github.com/astaxie/beego/logs"
 	"github.com/gorilla/websocket"
 	"net/http"
+	"sync"
 )
 
 func newSocket() *Socket {
 	ss := new(Socket)
 	ss.connectPool = make(map[string]*websocket.Conn)
+	ss.lock = new(sync.Mutex)
 	return ss
 }
 
+const paramToken = "im_token"
+
 type Socket struct {
 	connectPool map[string]*websocket.Conn
+	lock *sync.Mutex
 }
 
 /*接收请求*/
 func (ss *Socket) ServeHTTP(respose http.ResponseWriter, req *http.Request) {
-	// 身份校验
-	token := req.URL.Query().Get("token")
-	logs.Debug("TOKEN：%+v", token)
-
-	if valid, msg := ss.checkToken(token); false==valid {
+	// 请求合法性校验
+	if valid, msg := ss.validRequest(req); false==valid {
 		logs.Debug(msg)
 		respose.Write([]byte(msg))
 		return
 	}
+
+	token := req.URL.Query().Get(paramToken)
+	logs.Debug("TOKEN：%+v", token)
 
 	// HTTP请求升级为WebSocket
 	conn, err := websocket.Upgrade(respose, req, nil, 1024, 1024)
@@ -94,11 +99,21 @@ func (ss *Socket) listenConn(conn *websocket.Conn) {
 func (ss *Socket) readMessage(conn *websocket.Conn, msg []byte) {
 	logs.Debug("%+v", string(msg))
 
+	ss.lock.Lock()
+
+	// todo 广播
+
+	ss.lock.Unlock()
+
+
 	conn.WriteMessage(websocket.TextMessage, []byte("123"))
 }
 
-/*校验TOKEN合法性，true-合法，false-非法*/
-func (ss *Socket) checkToken(token string) (valid bool, msg string){
+/*校验请求合法性*/
+func (ss *Socket) validRequest(req *http.Request) (valid bool, msg string){
+	logs.Debug("%+v", req)
+
+	token := req.URL.Query().Get(paramToken)
 	if 0 == len(token) {
 		return false, "身份信息不得为空"
 	}

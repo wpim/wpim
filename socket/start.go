@@ -8,9 +8,13 @@
 
 package socket
 
-import "net/http"
+import (
+	"net/http"
+	"github.com/astaxie/beego/logs"
+)
 
 func Start() {
 	ss := newSocket()
+	logs.Info("WebSocket is running ...")
 	http.ListenAndServe(":8081", ss)
 }
