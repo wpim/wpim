@@ -102,6 +102,9 @@ func (ss *Socket) readMessage(conn *websocket.Conn, msg []byte) {
 	ss.lock.Lock()
 
 	// todo 广播
+	for _, v := range ss.connectPool {
+		v.WriteMessage(websocket.TextMessage, msg)
+	}
 
 	ss.lock.Unlock()
 
