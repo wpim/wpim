@@ -99,17 +99,19 @@ func (ss *Socket) listenConn(conn *websocket.Conn) {
 func (ss *Socket) readMessage(conn *websocket.Conn, msg []byte) {
 	logs.Debug("%+v", string(msg))
 
+	//go ss.broadcast(msg)
+}
+
+/*广播*/
+func (ss *Socket)broadcast(input []byte)  {
 	ss.lock.Lock()
 
 	// todo 广播
 	for _, v := range ss.connectPool {
-		v.WriteMessage(websocket.TextMessage, msg)
+		v.WriteMessage(websocket.TextMessage, input)
 	}
 
 	ss.lock.Unlock()
-
-
-	conn.WriteMessage(websocket.TextMessage, []byte("123"))
 }
 
 /*校验请求合法性*/
